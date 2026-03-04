@@ -36,7 +36,7 @@ The device maintains **conversation memory** across exchanges and includes a **s
 ### Install dependencies
 
 ```bash
-sudo apt install python3-numpy python3-pil
+sudo apt install python3-numpy python3-pil fonts-wqy-microhei
 pip install requests python-dotenv   # or: pip install -r requirements.txt
 ```
 

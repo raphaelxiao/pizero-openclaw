@@ -18,8 +18,16 @@ import config
 sys.path.append("/home/pi/Whisplay/Driver")
 from WhisPlay import WhisPlayBoard  # pyright: ignore[reportMissingImports]
 
-_FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-_FONT_PATH_REGULAR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+_FONT_PATHS_BOLD = [
+    "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+    "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+]
+_FONT_PATHS_REGULAR = [
+    "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+    "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+]
 _EMOJI_FONT_PATHS = [
     "/usr/share/fonts/opentype/noto/NotoColorEmoji.ttf",
     "/usr/share/fonts/truetype/noto/NotoEmoji-Regular.ttf",
@@ -38,6 +46,17 @@ CLOCK_FONT_SIZE = 28
 ACCENT_BAR_HEIGHT = 3
 POWER_SUPPLY_SYS = "/sys/class/power_supply"
 PISUGAR_SOCKET = "/tmp/pisugar-server.sock"
+
+
+def _load_text_font(paths: list[str], size: int) -> ImageFont.FreeTypeFont:
+    for path in paths:
+        if os.path.exists(path):
+            try:
+                return ImageFont.truetype(path, size)
+            except OSError:
+                continue
+    # Fallback to whatever PIL has if nothing else works
+    return ImageFont.load_default(size=size)
 
 
 def _load_emoji_font(size: int) -> ImageFont.FreeTypeFont | None:
@@ -444,15 +463,15 @@ class Display:
         self._width = self.board.LCD_WIDTH
         self._height = self.board.LCD_HEIGHT
 
-        self._status_font = ImageFont.truetype(_FONT_PATH, STATUS_FONT_SIZE)
-        self._status_sub_font = ImageFont.truetype(_FONT_PATH_REGULAR, STATUS_SUB_FONT_SIZE)
-        self._response_font = ImageFont.truetype(_FONT_PATH_REGULAR, RESPONSE_FONT_SIZE)
-        self._title_font = ImageFont.truetype(_FONT_PATH, TITLE_FONT_SIZE)
+        self._status_font = _load_text_font(_FONT_PATHS_BOLD, STATUS_FONT_SIZE)
+        self._status_sub_font = _load_text_font(_FONT_PATHS_REGULAR, STATUS_SUB_FONT_SIZE)
+        self._response_font = _load_text_font(_FONT_PATHS_REGULAR, RESPONSE_FONT_SIZE)
+        self._title_font = _load_text_font(_FONT_PATHS_BOLD, TITLE_FONT_SIZE)
         try:
-            self._battery_font = ImageFont.truetype(_FONT_PATH_REGULAR, BATTERY_FONT_SIZE)
+            self._battery_font = _load_text_font(_FONT_PATHS_REGULAR, BATTERY_FONT_SIZE)
         except OSError:
             self._battery_font = self._status_sub_font  # fallback so battery corner still draws
-        self._clock_font = ImageFont.truetype(_FONT_PATH, CLOCK_FONT_SIZE)
+        self._clock_font = _load_text_font(_FONT_PATHS_BOLD, CLOCK_FONT_SIZE)
         self._emoji_status = _load_emoji_font(STATUS_FONT_SIZE)
         self._emoji_response = _load_emoji_font(RESPONSE_FONT_SIZE)
 
