@@ -67,39 +67,35 @@ def stream_response(
             f"OpenClaw request failed ({resp.status_code}): {resp.text[:300]}"
         )
 
-    # Process stream in small chunks so we yield tokens as soon as a full SSE line
-    # arrives (lower latency than iter_lines() with default buffering).
+    # Process SSE stream line by line instead of buffering in 512-byte chunks
+    # (iter_content(512) blocks and waits until 512 bytes are complete, causing chunky UI updates).
     event_type = None
-    buf = ""
-    for chunk in resp.iter_content(chunk_size=512, decode_unicode=True):
-        if chunk is None:
+    for line_bytes in resp.iter_lines():
+        if not line_bytes:
+            event_type = None
             continue
-        buf += chunk
-        while "\n" in buf or "\r" in buf:
-            line, _, buf = buf.partition("\n")
-            line = line.strip().rstrip("\r")
-            if not line:
-                event_type = None
+            
+        line = line_bytes.decode("utf-8")
+        if line.startswith("event:"):
+            event_type = line[len("event:"):].strip()
+            continue
+            
+        if line.startswith("data:"):
+            data_str = line[len("data:"):].strip()
+            if not data_str or data_str == "[DONE]":
                 continue
-            if line.startswith("event:"):
-                event_type = line[len("event:"):].strip()
+            try:
+                data = json.loads(data_str)
+            except json.JSONDecodeError:
                 continue
-            if line.startswith("data:"):
-                data_str = line[len("data:"):].strip()
-                if not data_str or data_str == "[DONE]":
-                    continue
-                try:
-                    data = json.loads(data_str)
-                except json.JSONDecodeError:
-                    continue
-                    
-                if "error" in data:
-                    err_msg = data.get("error", {}).get("message", str(data))
-                    raise RuntimeError(f"OpenClaw stream error: {err_msg}")
-                    
-                choices = data.get("choices", [])
-                if choices:
-                    delta = choices[0].get("delta", {})
-                    content = delta.get("content")
-                    if content:
-                        yield content
+                
+            if "error" in data:
+                err_msg = data.get("error", {}).get("message", str(data))
+                raise RuntimeError(f"OpenClaw stream error: {err_msg}")
+                
+            choices = data.get("choices", [])
+            if choices:
+                delta = choices[0].get("delta", {})
+                content = delta.get("content")
+                if content:
+                    yield content
