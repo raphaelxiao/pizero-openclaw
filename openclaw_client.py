@@ -92,18 +92,14 @@ def stream_response(
                     data = json.loads(data_str)
                 except json.JSONDecodeError:
                     continue
-                msg_type = data.get("type", "")
-                if msg_type == "response.output_text.delta":
-                    delta = data.get("delta", "")
-                    if delta:
-                        yield delta
-                elif msg_type == "response.content_part.added":
-                    part = data.get("part", {})
-                    text = part.get("text", "")
-                    if text:
-                        yield text
-                elif msg_type == "response.completed":
-                    return
-                elif msg_type == "error":
+                    
+                if "error" in data:
                     err_msg = data.get("error", {}).get("message", str(data))
                     raise RuntimeError(f"OpenClaw stream error: {err_msg}")
+                    
+                choices = data.get("choices", [])
+                if choices:
+                    delta = choices[0].get("delta", {})
+                    content = delta.get("content")
+                    if content:
+                        yield content
