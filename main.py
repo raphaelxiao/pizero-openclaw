@@ -58,7 +58,6 @@ class Assistant:
         self._last_idle_refresh = 0.0
         self._state_entered_at = 0.0
         self._tts = TTSPlayer() if config.ENABLE_TTS else None
-        self._conversation_history: list[dict] = []
 
     def _is_stale(self, my_gen: int) -> bool:
         return self._worker_gen != my_gen
@@ -191,7 +190,7 @@ class Assistant:
         tts_buffer = ""
         stream_t0 = time.monotonic()
 
-        for delta in stream_response(transcript, history=self._conversation_history):
+        for delta in stream_response(transcript):
             if self._is_stale(my_gen) or self._shutdown.is_set():
                 break
             if first_token:
@@ -236,12 +235,8 @@ class Assistant:
 
         log.info("response complete -- holding on screen")
 
-        # Update conversation history
-        self._conversation_history.append({"role": "user", "content": transcript})
-        self._conversation_history.append({"role": "assistant", "content": full_response})
-        max_msgs = config.CONVERSATION_HISTORY_LENGTH * 2
-        if len(self._conversation_history) > max_msgs:
-            self._conversation_history = self._conversation_history[-max_msgs:]
+        # OpenClaw maintains conversation history server-side via the session key,
+        # so we do not need to track and trim history locally anymore.
 
         self._dismiss.clear()
         self._dismiss.wait(timeout=self._response_hold_timeout)

@@ -28,26 +28,21 @@ def _get_session() -> requests.Session:
 
 def stream_response(
     user_text: str,
-    history: list[dict] | None = None,
 ) -> Generator[str, None, None]:
     """Send user_text to OpenClaw /v1/responses with streaming.
 
     Yields text deltas as they arrive via SSE.
-    When *history* is provided, the full conversation context is sent as an
-    array of ``{"role": ..., "content": ...}`` items.
     """
     url = f"{config.OPENCLAW_BASE_URL}/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {config.OPENCLAW_TOKEN}",
         "Content-Type": "application/json",
         "Accept": "text/event-stream",
+        "x-openclaw-session-key": "pizero-device-001",
+        "x-openclaw-agent-id": "main"
     }
 
-    if history:
-        messages = [{"role": m["role"], "content": m["content"]} for m in history]
-        messages.append({"role": "user", "content": user_text})
-    else:
-        messages = [{"role": "user", "content": user_text}]
+    messages = [{"role": "user", "content": user_text}]
 
     body = {
         "model": "openclaw",
