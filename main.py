@@ -25,6 +25,9 @@ from button_ptt import ButtonPTT, State
 if config.AUDIO_PROVIDER == "gemini":
     from transcribe_gemini import transcribe
     from tts_gemini import TTSPlayer
+elif config.AUDIO_PROVIDER == "glm":
+    from transcribe_glm import transcribe
+    from tts_glm import TTSPlayer
 else:
     from transcribe_openai import transcribe
     from tts_openai import TTSPlayer
