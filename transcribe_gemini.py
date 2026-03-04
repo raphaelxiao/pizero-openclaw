@@ -68,7 +68,7 @@ def transcribe(wav_path: str) -> str:
         resp = _get_session().post(
             url,
             json=payload,
-            timeout=30,
+            timeout=120,
         )
     except (requests.ConnectionError, requests.Timeout) as e:
         raise RuntimeError(f"Transcription request failed: {e}") from e

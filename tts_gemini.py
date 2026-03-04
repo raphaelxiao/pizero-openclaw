@@ -153,7 +153,7 @@ class TTSPlayer:
         }
         
         try:
-            resp = requests.post(url, json=payload, headers=headers, timeout=30)
+            resp = requests.post(url, json=payload, headers=headers, timeout=120)
         except Exception as e:
             print(f"[tts] request failed: {e}")
             return None

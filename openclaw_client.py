@@ -13,6 +13,7 @@ def _get_session() -> requests.Session:
     global _http_session
     if _http_session is None:
         _http_session = requests.Session()
+        _http_session.trust_env = False  # Ignore HTTP_PROXY for internal OpenClaw Gateway
         retry = Retry(
             total=3,
             backoff_factor=0.3,
