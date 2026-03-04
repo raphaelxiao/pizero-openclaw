@@ -428,6 +428,21 @@ def _apply_blink(sprite: Image.Image) -> Image.Image:
 
 
 def _generate_sprite_frames() -> dict[str, Image.Image]:
+    if config.DISPLAY_CHARACTER != "kirby":
+        frames = {}
+        sprite_dir = os.path.join(os.path.dirname(__file__), "sprites", config.DISPLAY_CHARACTER)
+        if os.path.isdir(sprite_dir):
+            for file in os.listdir(sprite_dir):
+                if file.endswith(".png"):
+                    key = file[:-4]
+                    try:
+                        frames[key] = Image.open(os.path.join(sprite_dir, file)).convert("RGB")
+                    except Exception as e:
+                        print(f"[display] Error loading {file}: {e}")
+            if frames:
+                return frames
+            print(f"[display] Warning: No PNGs found in {sprite_dir}. Falling back to Kirby.")
+            
     bases = {
         "idle": _make_sprite(_sprite_eyes_open, _sprite_mouth_smile),
         "listen": _make_sprite(

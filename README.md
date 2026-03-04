@@ -15,6 +15,7 @@ Button press → Record audio → Transcribe (OpenAI) → Stream LLM response (O
 4. Text streams onto the **LCD** in real time with pixel-accurate word wrapping
 5. Optionally **speaks the response** via OpenAI/Gemini/GLM TTS as sentences complete
 6. The idle screen shows a **clock, date, battery %, and WiFi status**
+7. The character animation loops fluidly between idle, talking, listening, and thinking states.
 
 The device maintains **conversation memory** across exchanges and includes a **silence gate** to skip empty recordings.
 
@@ -55,6 +56,7 @@ Edit `.env`:
 ```bash
 export OPENAI_API_KEY="sk-your-openai-api-key"
 export AUDIO_PROVIDER="glm" # "openai", "gemini", or "glm"
+export DISPLAY_CHARACTER="kirby" # defaults to "kirby". Option: "lobster"
 export GLM_API_KEY="your-glm-api-key"
 export OPENCLAW_TOKEN="your-openclaw-gateway-token"
 ```
@@ -74,6 +76,7 @@ All settings are configured via environment variables (loaded from `.env`):
 | Variable | Default | Description |
 |---|---|---|
 | `AUDIO_PROVIDER` | `openai` | API provider for STT & TTS (`openai`, `gemini`, or `glm`) |
+| `DISPLAY_CHARACTER` | `kirby` | The character sprite to show on the screen loop (`kirby` or directory under `sprites/`) |
 | `OPENAI_API_KEY` | _(required if openai)_ | OpenAI API key for transcription and TTS |
 | `GEMINI_API_KEY` | _(required if gemini)_ | Gemini API key for transcription and TTS |
 | `GLM_API_KEY`    | _(required if glm)_    | Zhipu GLM API key for transcription and TTS |

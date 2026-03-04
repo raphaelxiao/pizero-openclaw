@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 AUDIO_PROVIDER = os.environ.get("AUDIO_PROVIDER", "openai").lower() # "openai" or "gemini"
+DISPLAY_CHARACTER = os.environ.get("DISPLAY_CHARACTER", "kirby").lower()
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_TRANSCRIBE_MODEL = os.environ.get(
@@ -73,6 +74,7 @@ def print_config():
     print(f"DRY_RUN                 = {DRY_RUN}")
     print(f"LCD_BACKLIGHT           = {LCD_BACKLIGHT}")
     print(f"AUDIO_PROVIDER          = {AUDIO_PROVIDER}")
+    print(f"DISPLAY_CHARACTER       = {DISPLAY_CHARACTER}")
     print(f"OPENAI_API_KEY set      = {bool(OPENAI_API_KEY)}")
     print(f"GEMINI_API_KEY set      = {bool(GEMINI_API_KEY)}")
     print(f"GLM_API_KEY set         = {bool(GLM_API_KEY)}")
