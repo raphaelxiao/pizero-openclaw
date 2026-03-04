@@ -36,7 +36,7 @@ def stream_response(
     When *history* is provided, the full conversation context is sent as an
     array of ``{"role": ..., "content": ...}`` items.
     """
-    url = f"{config.OPENCLAW_BASE_URL}/v1/responses"
+    url = f"{config.OPENCLAW_BASE_URL}/v1/chat/responses"
     headers = {
         "Authorization": f"Bearer {config.OPENCLAW_TOKEN}",
         "Content-Type": "application/json",
@@ -44,18 +44,15 @@ def stream_response(
     }
 
     if history:
-        input_val: str | list[dict] = [
-            {"type": "message", "role": m["role"], "content": m["content"]}
-            for m in history
-        ]
-        input_val.append({"type": "message", "role": "user", "content": user_text})
+        messages = [{"role": m["role"], "content": m["content"]} for m in history]
+        messages.append({"role": "user", "content": user_text})
     else:
-        input_val = user_text
+        messages = [{"role": "user", "content": user_text}]
 
     body = {
         "model": "openclaw",
         "stream": True,
-        "input": input_val,
+        "messages": messages,
     }
 
     print(f"[openclaw] POST {url} (stream=true)")
