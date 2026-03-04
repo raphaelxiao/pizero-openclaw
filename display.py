@@ -438,7 +438,8 @@ def _generate_sprite_frames() -> dict[str, Image.Image]:
                     try:
                         orig = Image.open(os.path.join(sprite_dir, file)).convert("RGB")
                         if orig.size != (240, 240):
-                            orig = orig.resize((240, 240), Image.Resampling.LANCZOS)
+                            # Scale up using NEAREST to preserve crisp pixel-art edges for 30x30 sources
+                            orig = orig.resize((240, 240), Image.Resampling.NEAREST)
                         frames[key] = orig
                     except Exception as e:
                         print(f"[display] Error loading {file}: {e}")
