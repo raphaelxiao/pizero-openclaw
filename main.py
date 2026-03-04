@@ -202,16 +202,17 @@ class Assistant:
                 self.display.set_response_text("")
                 first_token = False
             full_response += delta
-            # Always append to the display immediately for real-time visual feedback
-            self.display.append_response(delta)
+            # Only append text to display if TTS is disabled (character animation owns the screen otherwise)
+            if not self._tts:
+                self.display.append_response(delta)
 
-            # Streaming TTS: batch 2–3 sentences for natural flow
+            # Streaming TTS: batch 1 sentence at a time for fast response
             if self._tts:
                 tts_buffer += delta
                 # Match both English and Chinese sentence-ending punctuation, plus newlines
                 sentence_ends = list(re.finditer(r"[.!?。！？]\s*|\n", tts_buffer))
-                if len(sentence_ends) >= 2:
-                    cut = sentence_ends[1].end()
+                if len(sentence_ends) >= 1:
+                    cut = sentence_ends[0].end()
                     chunk = tts_buffer[:cut].strip()
                     tts_buffer = tts_buffer[cut:]
                     if chunk:
