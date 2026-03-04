@@ -36,7 +36,7 @@ def stream_response(
     When *history* is provided, the full conversation context is sent as an
     array of ``{"role": ..., "content": ...}`` items.
     """
-    url = f"{config.OPENCLAW_BASE_URL}/v1/chat/responses"
+    url = f"{config.OPENCLAW_BASE_URL}/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {config.OPENCLAW_TOKEN}",
         "Content-Type": "application/json",
