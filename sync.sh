@@ -18,6 +18,7 @@ ssh ${TARGET_HOST} "
   sed -i 's|^User=.*|User='${PI_USER}'|' ${TARGET_DIR}/pokeclaw.service &&
   sed -i 's|^WorkingDirectory=.*|WorkingDirectory='${TARGET_DIR}'|' ${TARGET_DIR}/pokeclaw.service &&
   sed -i 's|^EnvironmentFile=.*|EnvironmentFile='${TARGET_DIR}/.env|' ${TARGET_DIR}/pokeclaw.service &&
+  sed -i 's|^Environment=PYTHONPATH=.*|Environment=PYTHONPATH=/home/'${PI_USER}'/Whisplay/Driver/|' ${TARGET_DIR}/pokeclaw.service &&
   sudo cp ${TARGET_DIR}/pokeclaw.service /etc/systemd/system/ &&
   sudo systemctl daemon-reload &&
   sudo systemctl enable pokeclaw &&

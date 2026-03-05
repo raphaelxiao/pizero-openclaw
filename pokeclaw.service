@@ -10,6 +10,7 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/pokeclaw
 EnvironmentFile=/home/pi/pokeclaw/.env
+Environment=PYTHONPATH=/home/pi/Whisplay/Driver/
 ExecStart=/usr/bin/python3 -m core.main
 Restart=on-failure
 RestartSec=5
