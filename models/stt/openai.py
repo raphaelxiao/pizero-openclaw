@@ -3,7 +3,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-import config
+from core import config
 
 _http_session: requests.Session | None = None
 
@@ -25,20 +25,16 @@ def _get_session() -> requests.Session:
 
 
 def transcribe(wav_path: str) -> str:
-    """Transcribe a WAV file using Zhipu GLM Audio Transcriptions API.
+    """Transcribe a WAV file using OpenAI Audio Transcriptions API.
 
-    In dry-run mode, prompts for typed input instead.
+    In dry-run mode (no OPENAI_API_KEY), prompts for typed input instead.
     """
-    if config.DRY_RUN and not config.GLM_API_KEY:
+    if config.DRY_RUN:
         print("[transcribe] DRY RUN — type your message:")
         try:
             return input("> ").strip()
         except EOFError:
             return ""
-
-    if not config.GLM_API_KEY:
-        print("[transcribe] ERROR: GLM_API_KEY is not set.")
-        return ""
 
     if not os.path.exists(wav_path):
         raise FileNotFoundError(f"WAV file not found: {wav_path}")
@@ -47,8 +43,8 @@ def transcribe(wav_path: str) -> str:
     if file_size < 100:
         raise ValueError(f"WAV file too small ({file_size} bytes), likely empty recording")
 
-    url = "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions"
-    headers = {"Authorization": f"Bearer {config.GLM_API_KEY}"}
+    url = "https://api.openai.com/v1/audio/transcriptions"
+    headers = {"Authorization": f"Bearer {config.OPENAI_API_KEY}"}
 
     with open(wav_path, "rb") as f:
         try:
@@ -57,10 +53,10 @@ def transcribe(wav_path: str) -> str:
                 headers=headers,
                 files={"file": ("utterance.wav", f, "audio/wav")},
                 data={
-                    "model": config.GLM_ASR_MODEL,
-                    "stream": "false",
+                    "model": config.OPENAI_TRANSCRIBE_MODEL,
+                    "response_format": "text",
                 },
-                timeout=60,
+                timeout=30,
             )
         except (requests.ConnectionError, requests.Timeout) as e:
             raise RuntimeError(f"Transcription request failed: {e}") from e
@@ -70,11 +66,6 @@ def transcribe(wav_path: str) -> str:
             f"Transcription failed ({resp.status_code}): {resp.text[:300]}"
         )
 
-    try:
-        data = resp.json()
-        transcript = data.get("text", "").strip()
-    except ValueError as e:
-         raise RuntimeError(f"Transcription response parsing failed: {e}. Output was {resp.text}")
-
+    transcript = resp.text.strip()
     print(f"[transcribe] result: {transcript[:120]}")
     return transcript

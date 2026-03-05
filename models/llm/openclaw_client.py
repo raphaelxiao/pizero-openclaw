@@ -4,7 +4,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-import config
+from core import config
 
 _http_session: requests.Session | None = None
 

@@ -1,4 +1,4 @@
-"""GLM TTS playback with pre-fetching for gapless sentence transitions."""
+"""OpenAI TTS playback with pre-fetching for gapless sentence transitions."""
 
 import math
 import queue
@@ -9,7 +9,7 @@ import time
 
 import requests
 
-import config
+from core import config
 
 try:
     import numpy as np
@@ -133,19 +133,22 @@ class TTSPlayer:
                 print(f"[tts] skipping sentence (fetch failed): {text[:40]}")
 
     def _fetch_wav(self, text: str) -> bytes | None:
-        url = "https://open.bigmodel.cn/api/paas/v4/audio/speech"
+        url = "https://api.openai.com/v1/audio/speech"
         headers = {
-            "Authorization": f"Bearer {config.GLM_API_KEY}",
+            "Authorization": f"Bearer {config.OPENAI_API_KEY}",
             "Content-Type": "application/json",
         }
         payload = {
-            "model": config.GLM_TTS_MODEL,
-            "voice": config.GLM_TTS_VOICE,
+            "model": config.OPENAI_TTS_MODEL,
+            "voice": config.OPENAI_TTS_VOICE,
             "input": text,
             "response_format": "wav",
+            "speed": max(0.25, min(4.0, config.OPENAI_TTS_SPEED)),
         }
+        if hasattr(config, "OPENAI_TTS_INSTRUCTIONS") and config.OPENAI_TTS_INSTRUCTIONS:
+            payload["instructions"] = config.OPENAI_TTS_INSTRUCTIONS
         try:
-            resp = requests.post(url, json=payload, headers=headers, stream=True, timeout=60)
+            resp = requests.post(url, json=payload, headers=headers, stream=True, timeout=30)
         except Exception as e:
             print(f"[tts] request failed: {e}")
             return None

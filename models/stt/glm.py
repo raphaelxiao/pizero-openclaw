@@ -1,10 +1,9 @@
 import os
 import requests
-import base64
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-import config
+from core import config
 
 _http_session: requests.Session | None = None
 
@@ -26,19 +25,19 @@ def _get_session() -> requests.Session:
 
 
 def transcribe(wav_path: str) -> str:
-    """Transcribe a WAV file using Gemini Audio Transcriptions API.
+    """Transcribe a WAV file using Zhipu GLM Audio Transcriptions API.
 
     In dry-run mode, prompts for typed input instead.
     """
-    if config.DRY_RUN and not config.GEMINI_API_KEY:
+    if config.DRY_RUN and not config.GLM_API_KEY:
         print("[transcribe] DRY RUN — type your message:")
         try:
             return input("> ").strip()
         except EOFError:
             return ""
 
-    if not config.GEMINI_API_KEY:
-        print("[transcribe] ERROR: GEMINI_API_KEY is not set.")
+    if not config.GLM_API_KEY:
+        print("[transcribe] ERROR: GLM_API_KEY is not set.")
         return ""
 
     if not os.path.exists(wav_path):
@@ -48,30 +47,23 @@ def transcribe(wav_path: str) -> str:
     if file_size < 100:
         raise ValueError(f"WAV file too small ({file_size} bytes), likely empty recording")
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{config.GEMINI_MODEL}:generateContent?key={config.GEMINI_API_KEY}"
+    url = "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions"
+    headers = {"Authorization": f"Bearer {config.GLM_API_KEY}"}
 
     with open(wav_path, "rb") as f:
-        audio_data = f.read()
-        
-    b64_audio = base64.b64encode(audio_data).decode("utf-8")
-
-    payload = {
-        "contents": [{
-            "parts": [
-                {"text": "Please transcribe this audio exactly as you hear it. Do not add any extra commentary or answer any questions within the audio."},
-                {"inlineData": {"mimeType": "audio/wav", "data": b64_audio}}
-            ]
-        }]
-    }
-
-    try:
-        resp = _get_session().post(
-            url,
-            json=payload,
-            timeout=120,
-        )
-    except (requests.ConnectionError, requests.Timeout) as e:
-        raise RuntimeError(f"Transcription request failed: {e}") from e
+        try:
+            resp = _get_session().post(
+                url,
+                headers=headers,
+                files={"file": ("utterance.wav", f, "audio/wav")},
+                data={
+                    "model": config.GLM_ASR_MODEL,
+                    "stream": "false",
+                },
+                timeout=60,
+            )
+        except (requests.ConnectionError, requests.Timeout) as e:
+            raise RuntimeError(f"Transcription request failed: {e}") from e
 
     if resp.status_code != 200:
         raise RuntimeError(
@@ -80,8 +72,8 @@ def transcribe(wav_path: str) -> str:
 
     try:
         data = resp.json()
-        transcript = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        transcript = data.get("text", "").strip()
+    except ValueError as e:
          raise RuntimeError(f"Transcription response parsing failed: {e}. Output was {resp.text}")
 
     print(f"[transcribe] result: {transcript[:120]}")

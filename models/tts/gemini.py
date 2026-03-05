@@ -1,5 +1,6 @@
-"""OpenAI TTS playback with pre-fetching for gapless sentence transitions."""
+"""Gemini TTS playback with pre-fetching for gapless sentence transitions."""
 
+import base64
 import math
 import queue
 import struct
@@ -9,7 +10,7 @@ import time
 
 import requests
 
-import config
+from core import config
 
 try:
     import numpy as np
@@ -78,7 +79,7 @@ class TTSPlayer:
 
     def submit(self, text: str) -> None:
         t = (text or "").strip()
-        if not t or config.DRY_RUN:
+        if not t or (config.DRY_RUN and not config.GEMINI_API_KEY):
             return
         self._submit_q.put(t)
 
@@ -133,43 +134,73 @@ class TTSPlayer:
                 print(f"[tts] skipping sentence (fetch failed): {text[:40]}")
 
     def _fetch_wav(self, text: str) -> bytes | None:
-        url = "https://api.openai.com/v1/audio/speech"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{config.GEMINI_MODEL}:generateContent?key={config.GEMINI_API_KEY}"
         headers = {
-            "Authorization": f"Bearer {config.OPENAI_API_KEY}",
             "Content-Type": "application/json",
         }
         payload = {
-            "model": config.OPENAI_TTS_MODEL,
-            "voice": config.OPENAI_TTS_VOICE,
-            "input": text,
-            "response_format": "wav",
-            "speed": max(0.25, min(4.0, config.OPENAI_TTS_SPEED)),
+            "contents": [{"parts": [{"text": text}]}],
+            "generationConfig": {
+                "responseModalities": ["AUDIO"],
+                "speechConfig": {
+                    "voiceConfig": {
+                        "prebuiltVoiceConfig": {
+                            "voiceName": config.GEMINI_TTS_VOICE
+                        }
+                    }
+                }
+            }
         }
-        if hasattr(config, "OPENAI_TTS_INSTRUCTIONS") and config.OPENAI_TTS_INSTRUCTIONS:
-            payload["instructions"] = config.OPENAI_TTS_INSTRUCTIONS
+        
         try:
-            resp = requests.post(url, json=payload, headers=headers, stream=True, timeout=30)
+            resp = requests.post(url, json=payload, headers=headers, timeout=120)
         except Exception as e:
             print(f"[tts] request failed: {e}")
             return None
+            
         if resp.status_code != 200:
             print(f"[tts] API error {resp.status_code}: {resp.text[:200]}")
             return None
 
-        wav_data = b"".join(resp.iter_content(chunk_size=4096))
-
-        gain_db = config.OPENAI_TTS_GAIN_DB
-        if gain_db > 0:
-            try:
-                r = subprocess.run(
-                    ["sox", "-t", "wav", "-", "-t", "wav", "-", "gain", str(gain_db)],
-                    input=wav_data, capture_output=True, timeout=30, check=False,
-                )
-                if r.returncode == 0 and r.stdout:
-                    wav_data = r.stdout
-            except (FileNotFoundError, subprocess.TimeoutExpired):
-                pass
-        return wav_data
+        try:
+            data = resp.json()
+            parts = data["candidates"][0]["content"]["parts"]
+            audio_data_b64 = None
+            for part in parts:
+                if "inlineData" in part and part["inlineData"].get("mimeType", "").startswith("audio"):
+                    audio_data_b64 = part["inlineData"]["data"]
+                    break
+                    
+            if not audio_data_b64:
+                print(f"[tts] No audio data returned in response: {resp.text[:100]}")
+                return None
+                
+            wav_data = base64.b64decode(audio_data_b64)
+            
+            # Gemini returns audio/pcm directly or wav format. The exact format differs,
+            # but usually it's processable by `sox`. If it lacks WAV header, `sox` might fail 
+            # if we specify `-t wav`. Let's test providing it as Raw if it fails.
+            
+            gain_db = config.OPENAI_TTS_GAIN_DB
+            if gain_db > 0:
+                try:
+                    # Attempt to apply gain using sox, assuming wav structure
+                    r = subprocess.run(
+                        ["sox", "-t", "wav", "-", "-t", "wav", "-", "gain", str(gain_db)],
+                        input=wav_data, capture_output=True, timeout=30, check=False,
+                    )
+                    if r.returncode == 0 and r.stdout:
+                        wav_data = r.stdout
+                    else:
+                        print(f"[tts] sox gain warning: code={r.returncode}, err={r.stderr[:200].decode(errors='ignore')}")
+                except (FileNotFoundError, subprocess.TimeoutExpired):
+                    pass
+                    
+            return wav_data
+            
+        except Exception as e:
+            print(f"[tts] JSON parsing or decoding failed: {e}")
+            return None
 
     # ── Player thread: play pre-fetched WAVs back to back ────────
 
@@ -215,6 +246,8 @@ class TTSPlayer:
         self.is_speaking.set()
 
         try:
+            # We use `aplay` directly. If the data is raw PCM, aplay will make noise if not given formats.
+            # Usually, Gemini REST `responseModalities: AUDIO` returns a valid WAV formatted payload.
             proc = subprocess.Popen(
                 ["aplay", "-q", "-D", config.AUDIO_OUTPUT_DEVICE, "-"],
                 stdin=subprocess.PIPE,

@@ -14,8 +14,8 @@ except ImportError:
 
 from PIL import Image, ImageDraw, ImageFont
 
-import config
-sys.path.append("/home/pi/Whisplay/Driver")
+from core import config
+sys.path.append(f"/home/{config.PI_USER}/Whisplay/Driver")
 from WhisPlay import WhisPlayBoard  # pyright: ignore[reportMissingImports]
 
 _FONT_PATHS_BOLD = [
@@ -430,7 +430,7 @@ def _apply_blink(sprite: Image.Image) -> Image.Image:
 def _generate_sprite_frames() -> dict[str, Image.Image]:
     if config.DISPLAY_CHARACTER != "kirby":
         frames = {}
-        sprite_dir = os.path.join(os.path.dirname(__file__), "sprites", config.DISPLAY_CHARACTER)
+        sprite_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "sprites", config.DISPLAY_CHARACTER)
         if os.path.isdir(sprite_dir):
             for file in os.listdir(sprite_dir):
                 if file.endswith(".png"):

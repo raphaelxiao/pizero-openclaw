@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 
-import config
+from core import config
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,20 +17,20 @@ logging.basicConfig(
     ],
 )
 log = logging.getLogger("openclaw")
-from display import Display
-from record_audio import Recorder, check_audio_level
-from openclaw_client import stream_response
-from button_ptt import ButtonPTT, State
+from core.display import Display
+from core.record_audio import Recorder, check_audio_level
+from models.llm.openclaw_client import stream_response
+from core.button_ptt import ButtonPTT, State
 
 if config.AUDIO_PROVIDER == "gemini":
-    from transcribe_gemini import transcribe
-    from tts_gemini import TTSPlayer
+    from models.stt.gemini import transcribe
+    from models.tts.gemini import TTSPlayer
 elif config.AUDIO_PROVIDER == "glm":
-    from transcribe_glm import transcribe
-    from tts_glm import TTSPlayer
+    from models.stt.glm import transcribe
+    from models.tts.glm import TTSPlayer
 else:
-    from transcribe_openai import transcribe
-    from tts_openai import TTSPlayer
+    from models.stt.openai import transcribe
+    from models.tts.openai import TTSPlayer
 
 
 class Assistant:

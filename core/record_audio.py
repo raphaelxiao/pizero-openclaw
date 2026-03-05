@@ -6,7 +6,7 @@ import subprocess
 import time
 import wave
 
-import config
+from core import config
 
 WAV_PATH = "/tmp/utterance.wav"
 
