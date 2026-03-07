@@ -35,6 +35,10 @@ GLM_ASR_MODEL = os.environ.get("GLM_ASR_MODEL", "glm-asr-2512")
 GLM_TTS_MODEL = os.environ.get("GLM_TTS_MODEL", "glm-tts")
 GLM_TTS_VOICE = os.environ.get("GLM_TTS_VOICE", "tongtong")
 
+DOUBAO_ACCESS_TOKEN = os.environ.get("DOUBAO_ACCESS_TOKEN", "")
+DOUBAO_APPID = os.environ.get("DOUBAO_APPID", "")
+DOUBAO_VOICE_TYPE = os.environ.get("DOUBAO_VOICE_TYPE", "BV700_V2_streaming")
+
 AUDIO_DEVICE = os.environ.get("AUDIO_DEVICE", "plughw:1,0")
 AUDIO_OUTPUT_DEVICE = os.environ.get("AUDIO_OUTPUT_DEVICE", "default")
 AUDIO_OUTPUT_CARD = int(os.environ.get("AUDIO_OUTPUT_CARD", "0"))  # ALSA card for amixer
@@ -68,6 +72,8 @@ def print_config():
     print(f"GLM_ASR_MODEL           = {GLM_ASR_MODEL}")
     print(f"GLM_TTS_MODEL           = {GLM_TTS_MODEL}")
     print(f"GLM_TTS_VOICE           = {GLM_TTS_VOICE}")
+    print(f"DOUBAO_APPID            = {DOUBAO_APPID}")
+    print(f"DOUBAO_VOICE_TYPE       = {DOUBAO_VOICE_TYPE}")
     print(f"OPENCLAW_BASE_URL       = {OPENCLAW_BASE_URL}")
     print(f"AUDIO_DEVICE            = {AUDIO_DEVICE}")
     print(f"AUDIO_OUTPUT_DEVICE     = {AUDIO_OUTPUT_DEVICE}")
@@ -80,6 +86,7 @@ def print_config():
     print(f"OPENAI_API_KEY set      = {bool(OPENAI_API_KEY)}")
     print(f"GEMINI_API_KEY set      = {bool(GEMINI_API_KEY)}")
     print(f"GLM_API_KEY set         = {bool(GLM_API_KEY)}")
+    print(f"DOUBAO_ACCESS_TOKEN set = {bool(DOUBAO_ACCESS_TOKEN)}")
     print(f"OPENCLAW_TOKEN set      = {bool(OPENCLAW_TOKEN)}")
     print(f"ENABLE_TTS              = {ENABLE_TTS}")
     print(f"CONVERSATION_HISTORY    = {CONVERSATION_HISTORY_LENGTH}")

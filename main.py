@@ -28,6 +28,9 @@ if config.AUDIO_PROVIDER == "gemini":
 elif config.AUDIO_PROVIDER == "glm":
     from models.stt.glm import transcribe
     from models.tts.glm import TTSPlayer
+elif config.AUDIO_PROVIDER == "doubao":
+    from models.stt.doubao import transcribe
+    from models.tts.doubao import TTSPlayer
 else:
     from models.stt.openai import transcribe
     from models.tts.openai import TTSPlayer
