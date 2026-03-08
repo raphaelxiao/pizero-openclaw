@@ -26,6 +26,13 @@ _EMOJI_RE = re.compile(
     flags=re.UNICODE,
 )
 
+# ── Markdown formatting regex ───────────────────────────────────────────────
+_RE_BOLD = re.compile(r"\*\*(.+?)\*\*|__(.+?)__")
+_RE_ITALIC = re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)(.+?)(?<!_)_(?!_)")
+_RE_CODE = re.compile(r"`(.+?)`")
+_RE_HEADING = re.compile(r"^#{1,6}\s+", re.MULTILINE)
+_RE_LINK = re.compile(r"\[(.+?)\]\(.*?\)")
+
 # ── Markdown table & bullet list state ──────────────────────────────────────
 _in_table = False
 _bullet_index = 0
@@ -153,15 +160,31 @@ def _process_structural(text: str) -> str:
     else:
         _bullet_index = 0
 
+    # 3. Blockquotes: start with '> '
+    if stripped.startswith("> "):
+        return stripped[2:].strip()
+
+    return text
+
+def _strip_markdown_inline(text: str) -> str:
+    """Strip bold, italic, code, links, and headings."""
+    text = _RE_BOLD.sub(lambda m: m.group(1) or m.group(2), text)
+    text = _RE_ITALIC.sub(lambda m: m.group(1) or m.group(2) or "", text)
+    text = _RE_CODE.sub(r"\1", text)
+    text = _RE_LINK.sub(r"\1", text)
+    text = _RE_HEADING.sub("", text)
     return text
 
 def preprocess_for_tts(text: str) -> str:
     """Preprocess text for TTS — convert numbers, symbols, structures to spoken Chinese."""
 
-    # ── 1. Structural content (tables, bullets) ──
+    # ── 1. Structural content (tables, bullets, blockquotes) ──
     text = _process_structural(text)
     if not text:
         return ""
+
+    # ── 1.5. Inline Markdown formatting (bold, italic, etc.) ──
+    text = _strip_markdown_inline(text)
 
     # ── 2. Symbol replacements ──
     text = text.replace("～", "至")
@@ -246,6 +269,26 @@ if __name__ == "__main__":
         (
             "- 香蕉",
             "第二，香蕉",
+        ),
+        (
+            "**这是加粗文字**",
+            "这是加粗文字",
+        ),
+        (
+            "这是*斜体*和`代码`",
+            "这是斜体和代码",
+        ),
+        (
+            "请看[这个链接](http://example.com)",
+            "请看这个链接",
+        ),
+        (
+            "> 这是一个引用",
+            "这是一个引用",
+        ),
+        (
+            "### 这是一个三级标题",
+            "这是一个三级标题",
         ),
     ]
 
