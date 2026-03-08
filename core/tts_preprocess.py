@@ -157,8 +157,6 @@ def _process_structural(text: str) -> str:
         _bullet_index += 1
         ordinal = _CN_ORDINALS[idx] if idx < len(_CN_ORDINALS) else f"第{num_to_chinese(idx + 1)}"
         return f"{ordinal}，{item}"
-    else:
-        _bullet_index = 0
 
     # 3. Blockquotes: start with '> '
     if stripped.startswith("> "):
@@ -167,12 +165,21 @@ def _process_structural(text: str) -> str:
     return text
 
 def _strip_markdown_inline(text: str) -> str:
-    """Strip bold, italic, code, links, and headings."""
-    text = _RE_BOLD.sub(lambda m: m.group(1) or m.group(2), text)
-    text = _RE_ITALIC.sub(lambda m: m.group(1) or m.group(2) or "", text)
-    text = _RE_CODE.sub(r"\1", text)
+    """Strip formatting aggressively, supporting orphaned chunks split by punctuation."""
+    # 1. Extract link text if fully matched
     text = _RE_LINK.sub(r"\1", text)
-    text = _RE_HEADING.sub("", text)
+    
+    # 2. Math multiplication (e.g. 3 * 4 -> 3 乘 4)
+    text = re.sub(r"(?<=\d)\s*\*\s*(?=\d)", "乘", text)
+    
+    # 3. Known terms
+    text = text.replace("C#", "C Sharp").replace("c#", "C Sharp")
+    text = text.replace("F#", "F Sharp").replace("f#", "F Sharp")
+    
+    # 4. Strip leftover unpronounceable syntax chars
+    for ch in ("*", "#", "_", "`", "~"):
+        text = text.replace(ch, "")
+        
     return text
 
 def preprocess_for_tts(text: str) -> str:
