@@ -23,7 +23,7 @@ PokeClaw 是一个基于 Raspberry Pi Zero W 搭配 [PiSugar WhisPlay 扩展板]
 4. 大模型的回复将像打字机一样 **实时流式滚动** 显示在屏幕上，并支持像素级的自动换行
 5. _(可选)_ 支持通过 TTS 当句子完结时同步 **语音播报**。内置**智能预处理系统**：能自动将数字转为中文读法、屏蔽掉无法朗读的 Markdown 表格、将列表转为“第一、第二...”序号，并自动剔除加粗等 Markdown 格式符号。同时，屏幕上仍会保留大模型输出的原始文本（含数字和 Markdown 格式），确保视觉和听觉体验完美分离。
 6. 待机界面会显示时钟、日期、电池电量和 Wi-Fi 状态
-7. 角色动画会根据当前状态流利地在 听(listening)、思考(thinking) 和 说话(talking)之间平滑切换。说话时还会**根据 TTS 播报音量实时对口型**！
+7. 角色动画会根据当前状态流利地在 听(listening)、思考(thinking) 和 说话(talking) 之间平滑切换。说话时还会**根据 TTS 播报音量实时对口型**！
 
 设备本身集成了 **静音过滤**（纯背景底噪不会发给云端），而在云端则支持通过内置的 Session 机制自动记住您的**上下文聊天历史**。
 
@@ -39,7 +39,7 @@ PokeClaw 是一个基于 Raspberry Pi Zero W 搭配 [PiSugar WhisPlay 扩展板]
 
 - Raspberry Pi OS (强烈建议 Bookworm 或以上版本)
 - Python 3.11+
-- 大模型 API 的密钥（支持 OpenAI, Google Gemini, 智谱 GLM 或 **火山引擎豆包** 的 STT 与 TTS）
+- 大模型 API 的密钥（支持 OpenAI, Google Gemini, 智谱 GLM 或 火山引擎豆包 的 STT 与 TTS）
 - 部署在网络上可访问的 [OpenClaw](https://openclaw.ai) 路由网关
 
 ### 安装依赖包
@@ -66,7 +66,7 @@ cp .env.example .env
 
 ```bash
 export OPENAI_API_KEY="sk-your-openai-api-key"
-export AUDIO_PROVIDER="doubao" # 语音引擎选项: "openai", "gemini", "glm", 或 "doubao"
+export AUDIO_PROVIDER="glm" # 语音引擎选项: "openai", "gemini", "glm", 或 "doubao"
 export DISPLAY_CHARACTER="lobster" # 默认自带了 "kirby" 卡比和 "lobster" 龙虾两个角色
 export PI_USER="pi" # 如果您的树莓派默认用户名不是 pi，请在此修改
 export GLM_API_KEY="your-glm-api-key"
