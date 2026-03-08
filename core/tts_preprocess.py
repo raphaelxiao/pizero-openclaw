@@ -139,14 +139,15 @@ def _process_structural(text: str) -> str:
 
     stripped = text.strip()
     
-    # 1. Table rows: start and end with '|' (roughly)
-    if stripped.startswith("|") and stripped.endswith("|") and len(stripped) > 2:
+    # 1. Table rows: aggressive chunk detection
+    is_table_row = stripped.startswith("|") or stripped.endswith("|") or (stripped.count("|") >= 2)
+    if is_table_row:
         if not _in_table:
             _in_table = True
             return "此处我整理了表格，可以在屏幕阅读。"
         else:
             return ""  # Skip subsequent table rows
-    else:
+    elif stripped:
         _in_table = False
 
     # 2. Bullet lists: start with '- ' or '* '
@@ -177,7 +178,7 @@ def _strip_markdown_inline(text: str) -> str:
     text = text.replace("F#", "F Sharp").replace("f#", "F Sharp")
     
     # 4. Strip leftover unpronounceable syntax chars
-    for ch in ("*", "#", "_", "`", "~"):
+    for ch in ("*", "#", "_", "`", "~", "|"):
         text = text.replace(ch, "")
         
     return text

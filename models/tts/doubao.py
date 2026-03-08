@@ -85,7 +85,7 @@ class TTSPlayer:
     def submit(self, text: str, raw_text: str = "") -> None:
         t = (text or "").strip()
         r = (raw_text or text or "").strip()
-        if not t or config.DRY_RUN:
+        if (not t and not r) or config.DRY_RUN:
             return
         self._submit_q.put((t, r))
 
@@ -129,6 +129,7 @@ class TTSPlayer:
                 continue
             text, raw_text = item
             if not text:
+                self._play_q.put((raw_text, b""))
                 continue
             wav_data = self._fetch_wav(text)
             if self._cancel.is_set():
