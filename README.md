@@ -21,9 +21,9 @@ PokeClaw 是一个基于 Raspberry Pi Zero W 搭配 [PiSugar WhisPlay 扩展板]
 2. **松开** 按键 — 录音会被发送至 OpenAI, Gemini, 或智谱 GLM 进行极速语音识别 (约需 0.7秒)
 3. 识别出的文字会发送至您的 **[OpenClaw](https://openclaw.ai) 网关** 获取大模型回复
 4. 大模型的回复将像打字机一样 **实时流式滚动** 显示在屏幕上，并支持像素级的自动换行
-5. _(可选)_ 支持通过 TTS 当句子完结时同步 **语音播报**
+5. _(可选)_ 支持通过 TTS 当句子完结时同步 **语音播报**。内置**智能预处理系统**：能自动将数字转为中文读法、屏蔽掉无法朗读的 Markdown 表格、将列表转为“第一、第二...”序号，并自动剔除加粗等 Markdown 格式符号。同时，屏幕上仍会保留大模型输出的原始文本（含数字和 Markdown 格式），确保视觉和听觉体验完美分离。
 6. 待机界面会显示时钟、日期、电池电量和 Wi-Fi 状态
-7. 角色动画会根据当前状态流利地在 听(listening)、思考(thinking) 和 说话(talking) 之间平滑切换。说话时还会**根据 TTS 播报音量实时对口型**！
+7. 角色动画会根据当前状态流利地在 听(listening)、思考(thinking) 和 说话(talking)之间平滑切换。说话时还会**根据 TTS 播报音量实时对口型**！
 
 设备本身集成了 **静音过滤**（纯背景底噪不会发给云端），而在云端则支持通过内置的 Session 机制自动记住您的**上下文聊天历史**。
 
@@ -39,7 +39,7 @@ PokeClaw 是一个基于 Raspberry Pi Zero W 搭配 [PiSugar WhisPlay 扩展板]
 
 - Raspberry Pi OS (强烈建议 Bookworm 或以上版本)
 - Python 3.11+
-- 大模型 API 的密钥（支持 OpenAI, Google Gemini, 或 智谱 GLM 的 STT 与 TTS）
+- 大模型 API 的密钥（支持 OpenAI, Google Gemini, 智谱 GLM 或 **火山引擎豆包** 的 STT 与 TTS）
 - 部署在网络上可访问的 [OpenClaw](https://openclaw.ai) 路由网关
 
 ### 安装依赖包
@@ -66,10 +66,12 @@ cp .env.example .env
 
 ```bash
 export OPENAI_API_KEY="sk-your-openai-api-key"
-export AUDIO_PROVIDER="glm" # 语音引擎选项: "openai", "gemini", 或者是 "glm"
+export AUDIO_PROVIDER="doubao" # 语音引擎选项: "openai", "gemini", "glm", 或 "doubao"
 export DISPLAY_CHARACTER="lobster" # 默认自带了 "kirby" 卡比和 "lobster" 龙虾两个角色
 export PI_USER="pi" # 如果您的树莓派默认用户名不是 pi，请在此修改
 export GLM_API_KEY="your-glm-api-key"
+export DOUBAO_APPID="your-appid"
+export DOUBAO_ACCESS_TOKEN="your-token"
 export OPENCLAW_TOKEN="your-openclaw-gateway-token"
 ```
 
@@ -87,18 +89,32 @@ python3 -m core.main
 
 | 变量名 | 默认值 | 用途说明 |
 |---|---|---|
-| `AUDIO_PROVIDER` | `openai` | STT & TTS 服务提供商 (`openai`, `gemini`, `glm`) |
+| `AUDIO_PROVIDER` | `openai` | STT & TTS 服务提供商 (`openai`, `gemini`, `glm`, `doubao`) |
+| `DOUBAO_APPID` | _(如果用 doubao)_ | 豆包/火山引擎 AppID |
+| `DOUBAO_ACCESS_TOKEN` | _(如果用 doubao)_ | 豆包 Bearer Token |
+| `DOUBAO_VOICE_TYPE` | `bv001_streaming` | 豆包 TTS 音色代码 |
 | `DISPLAY_CHARACTER` | `kirby` | 屏幕使用的默认角色动画集合 (`kirby`, `lobster`) |
-| `OPENAI_API_KEY` | _(如果用 openai 则必填)_ | OpenAI 开发者密钥 |
-| `GEMINI_API_KEY` | _(如果用 gemini 则必填)_ | Google Gemini 开发者密钥 |
-| `GLM_API_KEY`    | _(如果用 glm 则必填)_    | 智谱大模型开发者密钥 |
+| `OPENAI_API_KEY` | _(如果用 openai)_ | OpenAI 开发者密钥 |
+| `GEMINI_API_KEY` | _(如果用 gemini)_ | Google Gemini 开发者密钥 |
+| `GLM_API_KEY`    | _(如果用 glm)_    | 智谱大模型开发者密钥 |
 | `OPENCLAW_TOKEN` | _(必填)_ | OpenClaw 网关的认证密钥 |
 | `OPENCLAW_BASE_URL` | `https://...` | 您的私有 OpenClaw 网关地址 |
 | `ENABLE_TTS` | `false` | 是否开启机器人的语音朗读功能 |
 | `LCD_BACKLIGHT` | `70` | 屏幕背光亮度 (0–100) |
 | `SILENCE_RMS_THRESHOLD` | `200` | 环境音量低于此时过滤不上报云端 |
 
-*(更多冷门配置请参阅 `.env.example` 中的详细注释)*
+## 智能 TTS 预处理系统
+
+为了让机器人的发音更自然，本项目内置了针对中文环境优化的预处理引擎：
+
+- **数字转中文**：自动将 `129.80` 转换为 `一百二十九点八零`，按语境读出年份（如 `2025年` 读作 `二零二五年`）。
+- **Markdown 符号清洗**：自动剔除加粗 (`**`)、斜体 (`*`)、行内代码 (`` ` ``)、标题 (`#`)、链接等格式符号。
+- **结构化内容识别**：
+  - **表格屏蔽**：检测到大模型输出 Markdown 表格时，自动替换为提示语“此处我整理了表格，可以在屏幕阅读”，避免乱码朗读。
+  - **列表优化**：将无序列表 `- ` 自动转为 `第一，... 第二，...` 的有序读法。
+- **视觉/听觉分离**：屏幕会实时显示大模型的**原始美化 Markdown 文字**，而 TTS 仅播放**清洗后的纯净发音**。
+
+*(更多细节配置请参阅 `.env.example` 中的详细注释)*
 
 ## TO-DO 计划任务
 
